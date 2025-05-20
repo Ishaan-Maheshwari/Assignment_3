@@ -1,0 +1,12 @@
+python inference.py \
+  --model_path model.pth \
+  --src_stoi_path src_stoi.json \
+  --tgt_itos_path tgt_itos.json \
+  --input_text "ajanabee" \
+  --embedding_dim 64 \
+  --hidden_dim 64 \
+  --num_layers 1 \
+  --cell_type LSTM \
+  --dropout 0.2 \
+  --beam_width 5 \
+  --max_len 30
