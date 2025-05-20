@@ -14,13 +14,15 @@ parameters:
   hidden_dim:
     values: [16, 32, 64, 256]
   num_layers:
-    values: [1, 2, 3]
+    values: [1]
   cell_type:
     values: ["RNN", "GRU", "LSTM"]
   dropout:
     values: [0.2, 0.3]
   lr:
     values: [0.001, 0.0005]
+  use_attention:
+    value: true
   batch_size:
     values: [32, 64]
   epochs:

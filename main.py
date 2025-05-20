@@ -9,6 +9,7 @@ from dataset import TransliterationDataset, collate_fn
 from model import Seq2Seq
 from train import train_one_epoch, calculate_accuracy
 
+
 def evaluate(model, dataloader, criterion, pad_idx, device):
     model.eval()
     total_loss = 0
@@ -36,8 +37,8 @@ def train():
     train_pairs = read_tsv(config.train_path)
     dev_pairs = read_tsv(config.dev_path)
 
-    src_stoi, src_itos = build_vocab([x[0] for x in train_pairs])
-    tgt_stoi, tgt_itos = build_vocab([x[1] for x in train_pairs])
+    src_stoi, src_itos = build_vocab([x[1] for x in train_pairs])
+    tgt_stoi, tgt_itos = build_vocab([x[0] for x in train_pairs])
 
     train_ds = TransliterationDataset(train_pairs, src_stoi, tgt_stoi)
     dev_ds = TransliterationDataset(dev_pairs, src_stoi, tgt_stoi)
@@ -55,10 +56,13 @@ def train():
         num_layers=config.num_layers,
         cell_type=config.cell_type,
         dropout=config.dropout,
+        use_attention=getattr(config, "use_attention", True)  # Default to True
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss(ignore_index=tgt_stoi["<pad>"])
+
+    best_val_acc = 0.0
 
     for epoch in range(config.epochs):
         train_loss, train_acc = train_one_epoch(model, train_dl, optimizer, criterion, tgt_stoi["<pad>"], device)
@@ -74,11 +78,14 @@ def train():
 
         print(f"Epoch {epoch+1} | Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f} | Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
 
-    # Optionally save model checkpoint at end
-    if wandb.run is not None:
-        torch.save(model.state_dict(), "model.pth")
-        wandb.save("model.pth")
-    
+        # Save best model
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            torch.save(model.state_dict(), "best_model.pth")
+            if wandb.run is not None:
+                wandb.save("best_model.pth")
+
+    # Save vocab files
     import json
     with open('src_stoi.json', 'w', encoding='utf-8') as f:
         json.dump(src_stoi, f, ensure_ascii=False)
